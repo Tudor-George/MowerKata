@@ -14,22 +14,6 @@ public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
-        /*
-         * Afin de lancer l'application en mode Batch, il faut ajouter les configuration de la BDD, nous n'avons pas de BDD à rajouter dans l'exemple donnée
-         *  @Autowired
-            JobLauncher jobLauncher;
-
-            @Autowired
-            Job job;
-            
-             @Bean
-            public CommandLineRunner commandLineRunner() {
-                return args -> {
-                jobLauncher.run(job, new JobParameters());
-                };
-            }
-        */
-
         try {
             if (args.length < 1) {
                 logger.error("File path is mandatory !");
