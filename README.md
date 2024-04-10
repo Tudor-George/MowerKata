@@ -6,4 +6,6 @@ Prérequis : Java 17
 
 
 #Demarrage de programme
-'java -jar mower-0.0.1-SNAPSHOT.jar filePath'
+
+
+java -jar mower-0.0.1-SNAPSHOT.jar 'path/to/input/file'
