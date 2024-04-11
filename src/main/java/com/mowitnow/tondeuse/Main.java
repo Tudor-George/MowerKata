@@ -1,40 +1,59 @@
 package com.mowitnow.tondeuse;
 
-import com.mowitnow.tondeuse.dto.business.*;
-import com.mowitnow.tondeuse.dto.helpers.GridMowerDataInput;
-import com.mowitnow.tondeuse.io.FileLoader;
-import com.mowitnow.tondeuse.mapper.FileToDataInput;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.JobParametersInvalidException;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
+import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) {
-        try {
-            if (args.length < 1) {
-                logger.error("File path is mandatory !");
-                System.exit(1);
-            } else {
-                GridMowerDataInput gridMowerDataInput = FileToDataInput.transformFileInput(FileLoader.readFileToRowList(args[0]));
-                
-                Grid grid = new Grid(gridMowerDataInput.getUpperRightCorner());
-                grid.setMowerList(new ArrayList<>());
+	public static void main(String[] args) {
+		ConfigurableApplicationContext context = null;
+		try {
+			if (args.length < 1) {
+				logger.error("File path is mandatory !");
+			} else {
 
-                gridMowerDataInput.getMowerDataInputs().stream().forEach(d -> {
-                    Mower mower = new Mower(new OrientedPosition(d.getPosition(), d.getOrientation()));
-                    grid.getMowerList().add(mower);
-                    mower.executeInstructions(grid.getUpperRightCorner(), d.getInstructions());
-                });
-                logger.info("Final mower positions: {}", grid.toString());
-                System.exit(0);
-            }
+				context = new AnnotationConfigApplicationContext("com.mowitnow.*");
 
-        } catch (IOException e) {
-            logger.error("An exception occurred: ", e);
-        }
-    }
+				context.getAutowireCapableBeanFactory().autowireBeanProperties(Main.class,
+						AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, false);
+
+				Job job = (Job) context.getBean("mowitnowJob");
+
+				JobParametersBuilder builder = new JobParametersBuilder();
+				builder.addString("startDate", LocalDateTime.now().toString());
+				builder.addString("inputFilePath", args[0]);
+
+				JobLauncher joblauncher = (JobLauncher) context.getBean("jobLauncher");
+				JobExecution je = joblauncher.run(job, builder.toJobParameters());
+			}
+
+		} catch (JobExecutionAlreadyRunningException e) {
+			logger.error("An JobExecutionAlreadyRunningException occurred: ", e);
+		} catch (JobRestartException e) {
+			logger.error("An JobRestartException occurred: ", e);
+		} catch (JobInstanceAlreadyCompleteException e) {
+			logger.error("An JobInstanceAlreadyCompleteException occurred: ", e);
+		} catch (JobParametersInvalidException e) {
+			logger.error("An JobParametersInvalidException occurred: ", e);
+		} finally {
+			if (context != null) {
+				context.close();
+			}
+		}
+	}
 }

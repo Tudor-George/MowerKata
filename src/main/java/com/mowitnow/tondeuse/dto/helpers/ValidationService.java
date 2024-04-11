@@ -11,8 +11,18 @@ public class ValidationService {
 	private static final Pattern CONTROL_PATTERN = Pattern.compile("^[DGA]+$");
 	private static final Pattern ORIENTATION_PATTERN = Pattern.compile("^[NEWS]+$");
 	private static final Pattern POSITION_PATTERN = Pattern.compile("^\\d+ \\d+ [NEWS]$");
+	private static final Pattern TWO_NUMBERS_PATTERN = Pattern.compile("^\\d+ \\d+$");
 	private int largeur, longeur; // These need to be set when validating the first line
-    private static final Logger logger = LoggerFactory.getLogger(ValidationService.class);
+	private static final Logger logger = LoggerFactory.getLogger(ValidationService.class);
+
+	public void setLargeur(int largeur) {
+		this.largeur = largeur;
+	}
+
+	public void setLongeur(int longeur) {
+		this.longeur = longeur;
+	}
+
 	// Methods to get grid dimensions
 	public int getLargeur() {
 		return this.largeur;
@@ -39,21 +49,9 @@ public class ValidationService {
 				&& (tondeuseCoordinateY >= 0 && tondeuseCoordinateY <= longeur);
 	}
 
-	// Validates the first line of the file and initializes the grid dimensions
-	public boolean validateAndInitializeGridSize(String gridSizeLine) {
-		if (gridSizeLine == null || gridSizeLine.isEmpty())
-			return false;
-		String[] parts = gridSizeLine.split(" ");
-		if (parts.length != 2)
-			return false;
-		try {
-			largeur = Integer.parseInt(parts[0]);
-			longeur = Integer.parseInt(parts[1]);
-			return true;
-		} catch (NumberFormatException e) {
-			logger.error("Wrong number format for grid size");
-			return false;
-		}
+	// Validates the presence of two numbers in the format "12 45"
+	public boolean isValidTwoNumbersFormat(String input) {
+		return input != null && TWO_NUMBERS_PATTERN.matcher(input).matches();
 	}
 
 	// Validates the mower's position and orientation line
@@ -71,13 +69,10 @@ public class ValidationService {
 		}
 	}
 
-	// Integration into mowerInputValid method (you'll need to adjust this to fit
-	// within your logic)
+
 	public boolean mowerInputValid(List<String> input, int lineIndex) {
 		if (!isNotNullLine(input, lineIndex))
 			return false;
-		if (lineIndex == 0)
-			return validateAndInitializeGridSize(input.get(lineIndex));
 		if (lineIndex % 2 != 0) { // Position and orientation line
 			return isValidMowerPosition(input.get(lineIndex));
 		} else { // Control line
